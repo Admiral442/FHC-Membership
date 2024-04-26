@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<style>
+    .dashboard-sections-container {
+        display: flex;
+    }
+
+    .dashboard-section {
+        flex: 1;
+        margin-right: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 10px;
+        background-color: #f9f9f9;
+    }
+
+    .dashboard-section h3 {
+        margin-bottom: 10px;
+    }
+
+    .dashboard-section-number {
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .dashboard-chart {
+        margin-top: 20px;
+    }
+</style>
+<body>
+    <div class="top-stripe">
+        <div class="container">
+            <div class="logo-container">
+                <img class="logo" src="/images/logo.png" alt="Logo">
+                <h1 class="site-title">FHC - Memberships</h1>
+            </div>
+            <div class="navigation-links">
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/Admin">Admin - Portal</a></li>
+                <li><a href="/profile">Profile</a></li>
+                <li><a href="/Login.html">Login</a></li>
+                <!-- Add more menu buttons as needed -->
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2 class="dashboard-heading">Welcome to the Admin Dashboard</h2>
+
+        <!-- Dashboard Sections -->
+        <div class="dashboard-sections-container">
+            <!-- Active Members Section -->
+            <div class="dashboard-section">
+                <h3>Total Active Members</h3>
+                <div class="dashboard-section-number" id="totalActiveMembers">0</div>
+                <canvas id="activeMembersChart" class="dashboard-chart" width="400" height="300"></canvas>
+            </div>
+
+            <!-- Applications Needing Review Section -->
+            <div class="dashboard-section">
+                <h3>Applications Needing Review</h3>
+                <div class="dashboard-section-number" id="applicationsNeedingReview">0</div>
+                <canvas id="applicationsReviewChart" class="dashboard-chart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client-side code (dashboard.ejs) -->
+<script>
+    // Function to fetch statistics from the server
+    async function fetchStatistics() {
+        try {
+            const response = await fetch('/statistics');
+            if (!response.ok) {
+                throw new Error('Failed to fetch statistics');
+            }
+            const data = await response.json();
+            displayStatistics(data);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    // Function to display statistics using charts
+    function displayStatistics(data) {
+        // Aggregate data for Total Active Members
+        const totalActiveMembersCount = aggregateTotalActiveMembers(data.totalActiveMembers);
+
+        // Aggregate data for Applications Needing Review
+        const applicationsNeedingReviewCount = aggregateTotalApplicationsNeedingReview(data.applicationsNeedingReview);
+
+        // Update Total Active Members count
+        const totalActiveMembersElement = document.getElementById('totalActiveMembers');
+        totalActiveMembersElement.textContent = totalActiveMembersCount;
+
+        // Update Applications Needing Review count
+        const applicationsNeedingReviewElement = document.getElementById('applicationsNeedingReview');
+        applicationsNeedingReviewElement.textContent = applicationsNeedingReviewCount;
+
+        // Display charts
+        displayCharts(data);
+    }
+
+    // Function to aggregate total count of active members
+    function aggregateTotalActiveMembers(data) {
+        let totalCount = 0;
+        data.forEach(entry => {
+            totalCount += parseInt(entry.value);
+        });
+        return totalCount;
+    }
+
+    // Function to aggregate total count of applications needing review
+    function aggregateTotalApplicationsNeedingReview(data) {
+        let totalCount = 0;
+        data.forEach(entry => {
+            totalCount += parseInt(entry.value);
+        });
+        return totalCount;
+    }
+
+    // Function to display charts
+    function displayCharts(data) {
+        // Total Active Members Chart
+        new Chart(document.getElementById('activeMembersChart'), {
+            type: 'line',
+            data: {
+                labels: data.totalActiveMembers.map(entry => formatDate(entry.date)),
+                datasets: [{
+                    label: 'Total Active Members',
+                    data: data.totalActiveMembers.map(entry => entry.value),
+                    borderColor: ['#007bff'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            }
+        });
+
+        // Applications Needing Review Chart
+        new Chart(document.getElementById('applicationsReviewChart'), {
+            type: 'line',
+            data: {
+                labels: data.applicationsNeedingReview.map(entry => formatDate(entry.date)),
+                datasets: [{
+                    label: 'Applications Needing Review',
+                    data: data.applicationsNeedingReview.map(entry => entry.value),
+                    borderColor: ['#dc3545'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            }
+        });
+    }
+
+    // Function to format date string (assuming ISO date format)
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+    }
+
+    // Fetch statistics when the page loads
+    window.addEventListener('load', fetchStatistics);
+</script>
+
+</body>
+</html>
